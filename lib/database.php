@@ -45,19 +45,21 @@ class WordPress_GitHub_Sync_Database {
 	 * @return WordPress_GitHub_Sync_Post[]|WP_Error
 	 */
 	public function fetch_all_supported() {
-		$query = new WP_Query( array(
+		$args  = array(
 			'post_type'   => $this->get_whitelisted_post_types(),
 			'post_status' => $this->get_whitelisted_post_statuses(),
 			'nopaging'    => true,
 			'fields'      => 'ids',
-		) );
+		);
+
+		$query = new WP_Query( apply_filters( 'wpghs_pre_fetch_all_supported', $args ) );
 
 		$post_ids = $query->get_posts();
 
 		if ( ! $post_ids ) {
 			return new WP_Error(
 				'no_results',
-				__( 'Querying for supported posts returned no results.', 'wordpress-github-sync' )
+				__( 'Querying for supported posts returned no results.', 'wp-github-sync' )
 			);
 		}
 
@@ -85,7 +87,7 @@ class WordPress_GitHub_Sync_Database {
 				sprintf(
 					__(
 						'Post ID %s is not supported by WPGHS. See wiki to find out how to add support.',
-						'wordpress-github-sync'
+						'wp-github-sync'
 					),
 					$post_id
 				)
@@ -120,7 +122,7 @@ class WordPress_GitHub_Sync_Database {
 				sprintf(
 					__(
 						'Post for sha %s not found.',
-						'wordpress-github-sync'
+						'wp-github-sync'
 					),
 					$sha
 				)
@@ -152,9 +154,12 @@ class WordPress_GitHub_Sync_Database {
 
 		foreach ( $posts as $post ) {
 			$args    = apply_filters( 'wpghs_pre_import_args', $post->get_args(), $post );
+			
+			remove_filter('content_save_pre', 'wp_filter_post_kses');
 			$post_id = $post->is_new() ?
 				wp_insert_post( $args, true ) :
 				wp_update_post( $args, true );
+			add_filter('content_save_pre', 'wp_filter_post_kses');
 
 			if ( is_wp_error( $post_id ) ) {
 				if ( ! $error ) {
@@ -186,7 +191,7 @@ class WordPress_GitHub_Sync_Database {
 			return $error;
 		}
 
-		return __( 'Successfully saved posts.', 'wordpress-github-sync' );
+		return __( 'Successfully saved posts.', 'wp-github-sync' );
 	}
 
 	/**
@@ -248,7 +253,7 @@ class WordPress_GitHub_Sync_Database {
 			return new WP_Error(
 				'path_not_found',
 				sprintf(
-					__( 'Post not found for path %s.', 'wordpress-github-sync' ),
+					__( 'Post not found for path %s.', 'wp-github-sync' ),
 					$path
 				)
 			);
@@ -266,7 +271,7 @@ class WordPress_GitHub_Sync_Database {
 				return new WP_Error(
 					'db_error',
 					sprintf(
-						__( 'Failed to delete post ID %d.', 'wordpress-github-sync' ),
+						__( 'Failed to delete post ID %d.', 'wp-github-sync' ),
 						$post_id
 					)
 				);
@@ -274,7 +279,7 @@ class WordPress_GitHub_Sync_Database {
 		}
 
 		return sprintf(
-			__( 'Successfully deleted post ID %d.', 'wordpress-github-sync' ),
+			__( 'Successfully deleted post ID %d.', 'wp-github-sync' ),
 			$post_id
 		);
 	}
@@ -338,7 +343,7 @@ class WordPress_GitHub_Sync_Database {
 			return false;
 		}
 
-		return true;
+		return apply_filters( 'wpghs_is_post_supported', true, $post );
 	}
 
 	/**
@@ -365,7 +370,7 @@ class WordPress_GitHub_Sync_Database {
 			return new WP_Error(
 				'user_not_found',
 				sprintf(
-					__( 'Commit user not found for email %s', 'wordpress-github-sync' ),
+					__( 'Commit user not found for email %s', 'wp-github-sync' ),
 					$email
 				)
 			);
@@ -438,7 +443,7 @@ class WordPress_GitHub_Sync_Database {
 
 		if ( 0 === $result ) {
 			return sprintf(
-				__( 'No change for post ID %d.', 'wordpress-github-sync' ),
+				__( 'No change for post ID %d.', 'wp-github-sync' ),
 				$post_id
 			);
 		}
@@ -446,7 +451,7 @@ class WordPress_GitHub_Sync_Database {
 		clean_post_cache( $post_id );
 
 		return sprintf(
-			__( 'Successfully updated post ID %d.', 'wordpress-github-sync' ),
+			__( 'Successfully updated post ID %d.', 'wp-github-sync' ),
 			$post_id
 		);
 	}

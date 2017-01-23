@@ -37,7 +37,7 @@ class WordPress_GitHub_Sync_Payload {
 	/**
 	 * Returns whether payload should be imported.
 	 *
-	 * @return bool|WP_Error
+	 * @return bool
 	 */
 	public function should_import() {
 		// @todo how do we get this without importing the whole api object just for this?
@@ -51,28 +51,26 @@ class WordPress_GitHub_Sync_Payload {
 		$sync_branch = apply_filters( 'wpghs_sync_branch', 'master' );
 
 		if ( ! $sync_branch ) {
-			throw new Exception( __( 'Sync branch not set. Filter `wpghs_sync_branch` misconfigured.', 'wordpress-github-sync' ) );
+			throw new Exception( __( 'Sync branch not set. Filter `wpghs_sync_branch` misconfigured.', 'wp-github-sync' ) );
 		}
 
 		if ( $sync_branch !== $payload_branch ) {
-			return new WP_Error(
-				'invalid_branch',
-				sprintf(
-					__( 'Not on branch %s.', 'wordpress-github-sync' ),
-					$sync_branch
-				)
-			);
+			return false;
 		}
 
 		// We add a tag to commits we push out, so we shouldn't pull them in again.
 		$tag = apply_filters( 'wpghs_commit_msg_tag', 'wpghs' );
 
 		if ( ! $tag ) {
-			throw new Exception( __( 'Commit message tag not set. Filter `wpghs_commit_msg_tag` misconfigured.', 'wordpress-github-sync' ) );
+			throw new Exception( __( 'Commit message tag not set. Filter `wpghs_commit_msg_tag` misconfigured.', 'wp-github-sync' ) );
 		}
 
 		if ( $tag === substr( $this->message(), -1 * strlen( $tag ) ) ) {
-			return new WP_Error( 'synced_commit', __( 'Already synced this commit.', 'wordpress-github-sync' ) );
+			return false;
+		}
+
+		if ( ! $this->get_commit_id() ) {
+			return false;
 		}
 
 		return true;
@@ -84,7 +82,7 @@ class WordPress_GitHub_Sync_Payload {
 	 * @return string
 	 */
 	public function get_commit_id() {
-		return $this->data->head_commit->id;
+		return $this->data->head_commit ? $this->data->head_commit->id : null;
 	}
 
 	/**

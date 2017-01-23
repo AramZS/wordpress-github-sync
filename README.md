@@ -1,9 +1,9 @@
 # WordPress <--> GitHub Sync #
-**Contributors:** JamesDiGioia, benbalter   
+**Contributors:** JamesDiGioia, benbalter  
 **Tags:** github, git, version control, content, collaboration, publishing  
 **Requires at least:** 3.9  
-**Tested up to:** 4.3.1  
-**Stable tag:** 1.5.0  
+**Tested up to:** 4.7  
+**Stable tag:** 1.7.5  
 **License:** GPLv2  
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -17,13 +17,13 @@ Ever wish you could collaboratively author content for your WordPress site (or e
 
 Looking to tinker with Jekyll, but wish you could use WordPress's best-of-breed web editing interface instead of Atom? (gasp!)
 
-Well, now you can! Introducing [WordPress <--> GitHub Sync](https://github.com/benbalter/wordpress-github-sync)!
+Well, now you can! Introducing [WordPress <--> GitHub Sync](https://github.com/mAAdhaTTah/wordpress-github-sync)!
 
 ### WordPress <--> GitHub Sync does three things: ###
 
-1. Allows content publishers to version their content in GitHub, exposing "who made what change when" to readers
-2. Allows readers to submit proposed improvements to WordPress-served content via GitHub's Pull Request model
-3. Allows non-technical writers to draft and edit a Jekyll site in WordPress's best-of-breed editing interface
+1.  Allows content publishers to version their content in GitHub, exposing "who made what change when" to readers
+2.  Allows readers to submit proposed improvements to WordPress-served content via GitHub's Pull Request model
+3.  Allows non-technical writers to draft and edit a Jekyll site in WordPress's best-of-breed editing interface
 
 ### WordPress <--> GitHub sync might be able to do some other cool things: ###
 
@@ -74,7 +74,7 @@ Install the plugin and activate it via WordPress's plugin settings page.
 
 ### Configuring the plugin ###
 
-1. [Create a personal oauth token](https://github.com/settings/tokens/new) with the `public_repo` scope. If you'd prefer not to use your account, you can create another GitHub account for this. 
+1. [Create a personal oauth token](https://github.com/settings/tokens/new) with the `public_repo` scope. If you'd prefer not to use your account, you can create another GitHub account for this.
 2. Configure your GitHub host, repository, secret (defined in the next step),  and OAuth Token on the WordPress <--> GitHub sync settings page within WordPress's administrative interface. Make sure the repository has an initial commit or the export will fail.
 3. Create a WebHook within your repository with the provided callback URL and callback secret, using `application/json` as the content type. To set up a webhook on GitHub, head over to the **Settings** page of your repository, and click on **Webhooks & services**. After that, click on **Add webhook**.
 4. Click `Export to GitHub` or if you use WP-CLI, run `wp wpghs export all #` from the command line, where # = the user ID you'd like to commit as.
@@ -100,13 +100,15 @@ WordPress <--> GitHub Sync is also capable of importing posts directly from GitH
 
 and fill it out with the data related to the post you're writing. Save the post and commit it directly to the repository. After the post is added to WordPress, an additional commit will be added to the repository, updating the new post with the new information from the database.
 
-Note that WordPrss<-->GitHub Sync will *only* import posts from the `master` branch. Changes on other branches will be ignored.
+Note that WordPress <--> GitHub Sync will *only* import posts from the `master` branch. Changes on other branches will be ignored.
 
-If WPGHS cannot find the author for a given import, it will fallback to the default user as set on the settings page. **Make sure you set this user before you begin importing posts from GitHub.** Without it set, WPGHS will default to no user being set for the author as well as unknown-author revisions.
+If WordPress <--> GitHub Sync cannot find the author for a given import, it will fallback to the default user as set on the settings page. **Make sure you set this user before you begin importing posts from GitHub.** Without it set, WordPress <--> GitHub Sync will default to no user being set for the author as well as unknown-author revisions.
 
 ### Custom Post Type & Status Support ###
 
-By default, WordPress <--> GitHub Sync only exports published posts and pages. If you want to export additional post types or draft posts, you'll have to hook into the filters `wpghs_whitelisted_post_types` or `wpghs_whitelisted_post_statuses` respectively.
+By default, WordPress <--> GitHub Sync only exports published posts and pages. However, it provides a number of [hooks](https://codex.wordpress.org/Plugin_API) in order to customize its functionality. Check out the [wiki](https://github.com/mAAdhaTTah/wordpress-github-sync/wiki) for complete documentation for these actions and filters.
+
+If you want to export additional post types or draft posts, you'll have to hook into the filters `wpghs_whitelisted_post_types` or `wpghs_whitelisted_post_statuses` respectively.
 
 In `wp-content`, create or open the `mu-plugins` folder and create a plugin file there called `wpghs-custom-filters.php`. In it, paste and modify the below code:
 
@@ -120,14 +122,14 @@ In `wp-content`, create or open the `mu-plugins` folder and create a plugin file
      * Author URI:   https://jamesdigioia.com/
      * License:      GPL2
      */
-    
+
     add_filter('wpghs_whitelisted_post_types', function ($supported_post_types) {
       return array_merge($supported_post_types, array(
         // add your custom post types here
         'gistpen'
       ));
     });
-    
+
     add_filter('wpghs_whitelisted_post_statuses', function ($supported_post_statuses) {
       return array_merge($supported_post_statuses, array(
         // additional statuses available: https://codex.wordpress.org/Post_Status
@@ -159,15 +161,34 @@ If you'd like to include an edit link without modifying your theme directly, you
       return $content;
     }, 1000 );
 
-### Using WPGHS to Keep Multiple Sites in Sync
+#### Shortcodes (v >= XXXX) ####
 
-This is an _advanced feature_. Your configuration may or may not be fully supported. **Use at your own risk.**
+If you wish to add either the bare URL or a link referencing the URL to an individual post, without editing themes, you can add a [shortcode](https://codex.wordpress.org/Shortcode_API) anywhere in your post;
 
-More information can be found in the [wiki](https://github.com/mAAdhaTTah/wordpress-github-sync/wiki).
+`[wpghs]`
+
+The following optional attributes can also be included in the shortcode
+* `target=`
+   + `'view'` (default)  the url used will be the *view* URL (`/blob/`).
+   + `'edit'`            the url used will be the *edit* URL (`/edit/`).
+* `type=`
+   + `'link'` (default)  an anchor tag (`<a>`) with href set to the requested URL will be inserted.
+   + `'url'`             the the bare requested URL will be inserted.
+* `text=`
+   + `''` (default)      link text (where `type='link'`, ignored otherwise) will be set to 'View this post on GitHub'.
+   + `'text'`          link text (where `type='link'`, ignored otherwise) will be set to 'text' (the supplied text).
+
+For example,
+
+`[wpghs target='view' type='link' text='Here is my post on GitHub']` will produce a HTML anchor tag with href set to the 'view' URL of the post on GitHub, and the link text set to 'Here is my post on GitHub', i.e.
+
+`<a href="https://github.com/USERNAME/REPO/blob/master/_posts/YOURPOST.md">Here is my post on GitHub</a>`
+
+Any or all of the attributes can be left out; defaults will take their place.
 
 ### Additional Customizations ###
 
-There are a number of other filters available in WordPress <--> GitHub Sync for customizing various parts of the export, including the commit message and YAML front-matter. Want more detail? Check out the [wiki](https://github.com/mAAdhaTTah/wordpress-github-sync/wiki).
+There are a number of other customizations available in WordPress <--> GitHub Sync, including the commit message and YAML front-matter. Want more detail? Check out the [wiki](https://github.com/mAAdhaTTah/wordpress-github-sync/wiki).
 
 ### Contributing ###
 

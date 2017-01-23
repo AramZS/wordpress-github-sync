@@ -3,12 +3,12 @@
  * Plugin Name: WordPress GitHub Sync
  * Plugin URI: https://github.com/mAAdhaTTah/wordpress-github-sync
  * Description: A WordPress plugin to sync content with a GitHub repository (or Jekyll site).
- * Version: 1.5.0
+ * Version: 1.7.5
  * Author:  James DiGioia, Ben Balter
  * Author URI: http://jamesdigioia.com
  * License: GPLv2
  * Domain Path: /languages
- * Text Domain: wordpress-github-sync
+ * Text Domain: wp-github-sync
  */
 
 /*  Copyright 2014  James DiGioia  (email : jamesorodig@gmail.com)
@@ -48,13 +48,13 @@ class WordPress_GitHub_Sync {
 	 * Language text domain
 	 * @var string
 	 */
-	public static $text_domain = 'wordpress-github-sync';
+	public static $text_domain = 'wp-github-sync';
 
 	/**
 	 * Current version
 	 * @var string
 	 */
-	public static $version = '1.5.0';
+	public static $version = '1.7.5';
 
 	/**
 	 * Controller object
@@ -163,6 +163,10 @@ class WordPress_GitHub_Sync {
 		add_action( 'wp_ajax_nopriv_wpghs_sync_request', array( $this->controller, 'pull_posts' ) );
 		add_action( 'wpghs_export', array( $this->controller, 'export_all' ) );
 		add_action( 'wpghs_import', array( $this->controller, 'import_master' ) );
+
+		add_shortcode( 'wpghs', 'write_wpghs_link' );
+
+		do_action( 'wpghs_boot', $this );
 	}
 
 	/**
@@ -210,8 +214,8 @@ class WordPress_GitHub_Sync {
 			<p>
 				<?php
 					printf(
-						__( 'To set up your site to sync with GitHub, update your <a href="%s">settings</a> and click "Export to GitHub."', 'wordpress-github-sync' ),
-						admin_url( 'options-general.php?page=wordpress-github-sync' )
+						__( 'To set up your site to sync with GitHub, update your <a href="%s">settings</a> and click "Export to GitHub."', 'wp-github-sync' ),
+						admin_url( 'options-general.php?page=' . static::$text_domain)
 					);
 				?>
 			</p>
